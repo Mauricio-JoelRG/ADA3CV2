@@ -1,0 +1,88 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+void crearCombin(char **resultado, int *indice, const char *numeros, char *actual, int posicion);
+
+char **obtenerCombin(const char *numeros, int *tamaFinal);
+
+int main() {
+    char numeros[20];
+
+    printf("Ingrese los digitos (2-9): ");
+    if (fgets(numeros, sizeof(numeros), stdin) == NULL) {
+        printf("Error al leer los dígitos.\n");
+        return 1;
+    }
+
+    numeros[strcspn(numeros, "\n")] = 0;
+
+    for (int i = 0; i < strlen(numeros); i++) {
+        if (numeros[i] < '2' || numeros[i] > '9') {
+            printf("Numero no permitido. Solo se permiten digitos entre 2 y 9.\n");
+            return 1;
+        }
+    }
+
+    int tamaFinal;
+    char **combinaciones = obtenerCombin(numeros, &tamaFinal);
+
+    if (tamaFinal > 0) {
+        printf("Combinaciones para \"%s\":\n", numeros);
+        for (int i = 0; i < tamaFinal; i++) {
+            printf("\"%s\" ", combinaciones[i]);
+            free(combinaciones[i]);
+        }
+        printf("\n");
+    } else {
+        printf("No hay combinaciones posibles.\n");
+    }
+
+    free(combinaciones);
+    return 0;
+}
+
+const char *mapaNumeros[] = {
+    "",    "",    "abc",  "def",
+    "ghi", "jkl", "mno",  "pqrs",
+    "tuv", "wxyz"
+};
+
+void crearCombin(char **resultado, int *indice, const char *numeros, char *actual, int posicion) {
+    if (posicion == strlen(numeros)) {
+        actual[posicion] = '\0';
+        resultado[*indice] = strdup(actual);
+        (*indice)++;
+        return;
+    }
+
+    int digito = numeros[posicion] - '0';
+    const char *letras = mapaNumeros[digito];
+
+    for (int i = 0; i < strlen(letras); i++) {
+        actual[posicion] = letras[i];
+        crearCombin(resultado, indice, numeros, actual, posicion + 1);
+    }
+}
+
+char **obtenerCombin(const char *numeros, int *tamaFinal) {
+    int longitud = strlen(numeros);
+    *tamaFinal = 0;
+
+    if (longitud == 0) return NULL;
+
+    int total = 1;
+    for (int i = 0; i < longitud; i++) {
+        int digito = numeros[i] - '0';
+        total *= strlen(mapaNumeros[digito]);
+    }
+
+    *tamaFinal = total;
+    char **resultado = malloc(total * sizeof(char *));
+    char *actual = malloc(longitud + 1);
+
+    crearCombin(resultado, &(int){0}, numeros, actual, 0);
+
+    free(actual);
+    return resultado;
+}
