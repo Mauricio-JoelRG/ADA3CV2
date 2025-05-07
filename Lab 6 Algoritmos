@@ -1,0 +1,93 @@
+#include <stdio.h>
+#include <stdbool.h>
+
+#define MAX_TERMS 1000
+
+
+bool esPrimo(int n);
+int generarFibonacciFiltrado(int fib[], int K);
+int obtenerMinimoFibonacci(int fib[], int size, int K, int resultado[]);
+
+int main() {
+    int dia, mes, anio;
+    int K, opcion;
+
+    printf("¿Como deseas ingresar k?\n");
+    printf("1. Calcular a partir de fecha de nacimiento\n");
+    printf("2. Ingresar K manualmente\n");
+    scanf("%d", &opcion);
+
+    if (opcion == 1) {
+        printf("Ingresa tu dia de nacimiento (DD): ");
+        scanf("%d", &dia);
+        printf("Ingresa tu mes de nacimiento (MM): ");
+        scanf("%d", &mes);
+        printf("Ingresa tu anio de nacimiento (YYYY): ");
+        scanf("%d", &anio);
+
+        K = dia * 100 + mes * 10 + (anio % 100);
+        printf("K calculado: %d\n", K);
+    } else if (opcion == 2) {
+        printf("Ingresa el valor de K: ");
+        scanf("%d", &K);
+    } else {
+        printf("Opcion invalida.\n");
+        return 1;
+    }
+
+    int fib[MAX_TERMS], resultado[MAX_TERMS];
+    int tamFib = generarFibonacciFiltrado(fib, K);
+
+    printf("\nSecuencia de Fibonacci filtrada (sin posiciones primas):\n");
+    for (int i = 0; i < tamFib; i++) {
+        printf("%d ", fib[i]);
+    }
+    printf("\n\n");
+
+    int cantidad = obtenerMinimoFibonacci(fib, tamFib, K, resultado);
+
+    printf("Minimo numero de terminos que suman %d:\n", K);
+    for (int i = 0; i < cantidad; i++) {
+        printf("%d ", resultado[i]);
+    }
+    printf("\nCantidad de terminos: %d\n", cantidad);
+
+    return 0;
+}
+
+
+bool esPrimo(int n) {
+    if (n < 2) return false;
+    for (int i = 2; i * i <= n; i++) {
+        if (n % i == 0) return false;
+    }
+    return true;
+}
+
+int generarFibonacciFiltrado(int fib[], int K) {
+    int a = 0, b = 1, c;
+    int index = 1, count = 0;
+    while (a <= K) {
+        if (!esPrimo(index)) {
+            fib[count++] = a;
+        }
+        c = a + b;
+        a = b;
+        b = c;
+        index++;
+    }
+    return count;
+}
+
+
+int obtenerMinimoFibonacci(int fib[], int size, int K, int resultado[]) {
+    int count = 0;
+    for (int i = size - 1; i >= 0; i--) {
+        if (fib[i] <= K) {
+            K -= fib[i];
+            resultado[count++] = fib[i];
+        }
+        if (K == 0) break;
+    }
+    return count;
+}
