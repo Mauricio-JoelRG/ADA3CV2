@@ -1,0 +1,77 @@
+#include <stdio.h>
+#include <time.h>
+#include <stdlib.h>
+
+void generarMapa(int alturas[], int largo);
+int calcularAgua(int alturas[], int largo);
+
+int main() {
+    srand(time(NULL));
+
+    int largo;
+    printf(" Que tan largo quieres el mapa?: ");
+    scanf("%d", &largo);
+
+    int alturas[largo];
+    generarMapa(alturas, largo);
+
+    printf("Mapa generado: ");
+    for (int i = 0; i < largo; i++) {
+        printf("%d ", alturas[i]);
+    }
+    printf("\n");
+
+    int agua = calcularAgua(alturas, largo);
+    printf("El total de agua atrapada es: %d\n", agua);
+
+    return 0;
+}
+
+void generarMapa(int alturas[], int largo) {
+    for (int i = 0; i < largo; i++) {
+        alturas[i] = rand() % 10;
+    }
+}
+
+int calcularAgua(int alturas[], int largo) {
+    int aguaTotal = 0;
+    int i = 0;
+
+    while (i < largo - 1) {
+        int alturaInicial = alturas[i];
+        int alturaBuscada = alturaInicial;
+        int indiceMuroDerecho = -1;
+
+
+        while (alturaBuscada > 0) {
+            indiceMuroDerecho = -1;
+            for (int j = i + 1; j < largo; j++) {
+                if (alturas[j] >= alturaBuscada) {
+                    indiceMuroDerecho = j;
+                    break;
+                }
+            }
+            if (indiceMuroDerecho != -1) break;
+            alturaBuscada--;
+        }
+
+        if (indiceMuroDerecho != -1) {
+            int volumenBloques = 0;
+            for (int k = i + 1; k < indiceMuroDerecho; k++) {
+                volumenBloques += alturas[k];
+            }
+
+            int espacioMuros = indiceMuroDerecho - i - 1;
+            int volumenAgua = (alturaBuscada * espacioMuros) - volumenBloques;
+
+            if (volumenAgua > 0) {
+                aguaTotal += volumenAgua;
+            }
+            i = indiceMuroDerecho;
+        } else {
+            i++;
+        }
+    }
+
+    return aguaTotal;
+}
