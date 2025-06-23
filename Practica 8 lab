@@ -1,0 +1,102 @@
+#include <stdio.h>
+#include <string.h>
+#include <stdbool.h>
+#include <stdlib.h>
+
+
+bool sonAnagramas(const char *s1, const char *s2, int longitud);
+
+bool esScrambleAux(const char *s1, const char *s2, int longitud, int inicio_s1, int inicio_s2, bool ***memoria);
+
+bool esScramble(const char *s1, const char *s2);
+
+
+int main() {
+    char s1[31], s2[31];
+
+    printf("Ingrese la primera cadena (s1): ");
+    scanf("%30s", s1);
+
+    printf("Ingrese la segunda cadena (s2): ");
+    scanf("%30s", s2);
+
+    if (strlen(s1) != strlen(s2)) {
+        printf("Las cadenas deben tener la misma longitud.\n");
+        return 1;
+    }
+
+    printf("Resultado: %s\n", esScramble(s1, s2) ? "true" : "false");
+    return 0;
+}
+
+
+bool sonAnagramas(const char *s1, const char *s2, int longitud) {
+    int contador[26] = {0};
+    for (int i = 0; i < longitud; i++) {
+        contador[s1[i] - 'a']++;
+        contador[s2[i] - 'a']--;
+    }
+    for (int i = 0; i < 26; i++) {
+        if (contador[i] != 0) return false;
+    }
+    return true;
+}
+
+bool esScrambleAux(const char *s1, const char *s2, int longitud, int inicio_s1, int inicio_s2, bool ***memoria) {
+    if (memoria[longitud][inicio_s1][inicio_s2]) return true;
+
+    if (strncmp(s1 + inicio_s1, s2 + inicio_s2, longitud) == 0) {
+        memoria[longitud][inicio_s1][inicio_s2] = true;
+        return true;
+    }
+
+    if (!sonAnagramas(s1 + inicio_s1, s2 + inicio_s2, longitud)) {
+        return false;
+    }
+
+    for (int i = 1; i < longitud; i++) {
+
+        if (esScrambleAux(s1, s2, i, inicio_s1, inicio_s2, memoria) &&
+            esScrambleAux(s1, s2, longitud - i, inicio_s1 + i, inicio_s2 + i, memoria)) {
+            memoria[longitud][inicio_s1][inicio_s2] = true;
+            return true;
+        }
+
+
+        if (esScrambleAux(s1, s2, i, inicio_s1, inicio_s2 + longitud - i, memoria) &&
+            esScrambleAux(s1, s2, longitud - i, inicio_s1 + i, inicio_s2, memoria)) {
+            memoria[longitud][inicio_s1][inicio_s2] = true;
+            return true;
+        }
+    }
+
+    return false;
+}
+
+
+bool esScramble(const char *s1, const char *s2) {
+    int longitud = strlen(s1);
+    if (longitud != strlen(s2)) return false;
+
+
+    bool ***memoria = (bool ***)malloc((longitud + 1) * sizeof(bool **));
+    for (int l = 0; l <= longitud; l++) {
+        memoria[l] = (bool **)malloc(longitud * sizeof(bool *));
+        for (int i = 0; i < longitud; i++) {
+            memoria[l][i] = (bool *)calloc(longitud, sizeof(bool));
+        }
+    }
+
+    bool resultado = esScrambleAux(s1, s2, longitud, 0, 0, memoria);
+
+
+    for (int l = 0; l <= longitud; l++) {
+        for (int i = 0; i < longitud; i++) {
+            free(memoria[l][i]);
+        }
+        free(memoria[l]);
+    }
+    free(memoria);
+
+    return resultado;
+}
