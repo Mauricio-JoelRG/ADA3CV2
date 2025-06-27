@@ -1,0 +1,151 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#define MAX_TAM 256
+
+
+struct nodo {
+    char letra;
+    int freq;
+    struct nodo *izq, *der;
+};
+
+
+struct cola {
+    int tam;
+    struct nodo *nodos[MAX_TAM];
+};
+
+
+struct nodo *crearNodo(char letra, int freq) {
+    struct nodo *nuevo = (struct nodo *)malloc(sizeof(struct nodo));
+    nuevo->letra = letra;
+    nuevo->freq = freq;
+    nuevo->izq = nuevo->der = NULL;
+    return nuevo;
+}
+
+
+void insertar(struct cola *q, struct nodo *nodo) {
+    int i = q->tam++;
+    while (i && nodo->freq < q->nodos[i - 1]->freq) {
+        q->nodos[i] = q->nodos[i - 1];
+        i--;
+    }
+    q->nodos[i] = nodo;
+}
+
+
+struct nodo *sacarMin(struct cola *q) {
+    return q->nodos[--q->tam];
+}
+
+
+struct nodo *generarArbol(int freq[]) {
+    struct cola q;
+    q.tam = 0;
+
+    for (int i = 0; i < MAX_TAM; i++) {
+        if (freq[i]) {
+            insertar(&q, crearNodo((char)i, freq[i]));
+        }
+    }
+
+    while (q.tam > 1) {
+        struct nodo *izq = sacarMin(&q);
+        struct nodo *der = sacarMin(&q);
+        struct nodo *nuevo = crearNodo('\0', izq->freq + der->freq);
+        nuevo->izq = izq;
+        nuevo->der = der;
+        insertar(&q, nuevo);
+    }
+
+    return sacarMin(&q);
+}
+
+
+char *codigos[MAX_TAM];
+char temp[100];
+
+void generarCodigos(struct nodo *raiz, int nivel) {
+    if (raiz->izq == NULL && raiz->der == NULL) {
+        temp[nivel] = '\0';
+        codigos[(int)raiz->letra] = strdup(temp);
+        return;
+    }
+    if (raiz->izq) {
+        temp[nivel] = '0';
+        generarCodigos(raiz->izq, nivel + 1);
+    }
+    if (raiz->der) {
+        temp[nivel] = '1';
+        generarCodigos(raiz->der, nivel + 1);
+    }
+}
+
+
+int main() {
+    FILE *archivo = fopen("palabras.txt", "r");
+    if (!archivo) {
+        printf("No se pudo abrir el archivo.\n");
+        return 1;
+    }
+
+    char texto[1000];
+    size_t leidos = fread(texto, 1, sizeof(texto) - 1, archivo);
+    texto[leidos] = '\0';
+    fclose(archivo);
+
+    printf("Texto leido:\n%s\n", texto);
+
+    int frecuencia[MAX_TAM] = {0};
+    for (int i = 0; texto[i]; i++) {
+        frecuencia[(int)texto[i]]++;
+    }
+
+    struct nodo *raiz = generarArbol(frecuencia);
+    generarCodigos(raiz, 0);
+
+
+    FILE *cod = fopen("codificado.txt", "w");
+    int bits_original = 0, bits_codificado = 0;
+    for (int i = 0; texto[i]; i++) {
+        fprintf(cod, "%s", codigos[(int)texto[i]]);
+        bits_original += 8;
+        bits_codificado += strlen(codigos[(int)texto[i]]);
+    }
+    fclose(cod);
+
+    printf("Tamanio original: %d bits\n", bits_original);
+    printf("Tamanio codificado: %d bits\n", bits_codificado);
+    printf("Tasa de compresion: %.2f%%\n", (1.0 - (float)bits_codificado / bits_original) * 100);
+
+
+    char bin[10000];
+    FILE *arch_cod = fopen("codificado.txt", "r");
+    if (!arch_cod) {
+        printf("No se pudo abrir codificado.txt\n");
+        return 1;
+    }
+    size_t cod_leidos = fread(bin, 1, sizeof(bin) - 1, arch_cod);
+    bin[cod_leidos] = '\0';
+    fclose(arch_cod);
+
+    struct nodo *actual = raiz;
+    printf("\nTexto decodificado:\n");
+    for (int i = 0; bin[i]; i++) {
+        if (bin[i] == '0') actual = actual->izq;
+        else actual = actual->der;
+
+        if (actual->izq == NULL && actual->der == NULL) {
+            printf("%c", actual->letra);
+            actual = raiz;
+        }
+    }
+    printf("\n");
+
+
+
+    return 0;
+}
